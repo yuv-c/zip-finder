@@ -1,8 +1,10 @@
-import requests
 import asyncio
 from openpyxl import load_workbook, cell, worksheet, workbook
 from typing import Tuple, Iterable
 import logging
+import time
+from opensearchpy import OpenSearch
+
 
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(lineno)d | %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
@@ -30,6 +32,7 @@ row: integer
 value: probably str
 """
 
+AWS_DEFAULT_REGION = "eu-central-1"
 
 def get_excel_file_handles(file_path: str) -> (worksheet, workbook):
     work_book = load_workbook(filename=file_path, read_only=True)
@@ -95,7 +98,7 @@ async def log_bad_address_to_file(
         cell.Cell,
     ]
 ) -> None:
-    # You didn't think i'd actually implement this, did you?
+    # You didn't think I'd actually implement this, did you?
     pass
 
 
@@ -176,4 +179,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    start = time.perf_counter()
     asyncio.run(main=main())
+    print(f"{__file__} executed in {time.perf_counter() - start:0.2f} seconds.")
+

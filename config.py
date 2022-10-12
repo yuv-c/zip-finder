@@ -1,0 +1,5 @@
+import os
+
+
+AWS_OS_ACCESS_KEY = "AKIA5WTL4P7DVNAMA4OE"
+AWS_OS_SECRET_KEY = os.environ.get("AWS_OS_SECRET_KEY")
