@@ -3,8 +3,7 @@ from openpyxl import load_workbook, cell, worksheet, workbook
 from typing import Tuple, Iterable
 import logging
 import time
-from opensearchpy import OpenSearch
-
+from os_client import OpenSearchClient
 
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(lineno)d | %(message)s"
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
@@ -32,7 +31,6 @@ row: integer
 value: probably str
 """
 
-AWS_DEFAULT_REGION = "eu-central-1"
 
 def get_excel_file_handles(file_path: str) -> (worksheet, workbook):
     work_book = load_workbook(filename=file_path, read_only=True)
@@ -65,7 +63,7 @@ def verify_numbers(number: str) -> None:
 
 
 def yield_rows_from_work_sheet(
-    work_sheet: worksheet, min_row: int, max_row: int
+        work_sheet: worksheet, min_row: int, max_row: int
 ) -> Iterable[
     Tuple[
         cell.Cell,
@@ -86,34 +84,34 @@ def yield_rows_from_work_sheet(
 
 
 async def log_bad_address_to_file(
-    row: Tuple[
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-    ]
+        row: Tuple[
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+        ]
 ) -> None:
     # You didn't think I'd actually implement this, did you?
     pass
 
 
 async def print_cell_content(
-    row_data: Tuple[
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-    ]
+        row_data: Tuple[
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+        ]
 ) -> None:
     (
         loc_id,
@@ -160,7 +158,7 @@ async def main() -> None:
 
     for number in range(min_row, rows_number, rows_step_size):
         for row in yield_rows_from_work_sheet(
-            work_sheet=work_sheet, min_row=min_row, max_row=max_row
+                work_sheet=work_sheet, min_row=min_row, max_row=max_row
         ):
 
             if row[0].value is None:  # EOF
@@ -182,4 +180,3 @@ if __name__ == "__main__":
     start = time.perf_counter()
     asyncio.run(main=main())
     print(f"{__file__} executed in {time.perf_counter() - start:0.2f} seconds.")
-
