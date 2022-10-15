@@ -46,6 +46,12 @@ class OpenSearchClient(object):
         self.client.indices.delete(index)
         logging.info(f"Success deleting index {index}.")
 
+    def delete_all_docs_from_index_but_keep_the_mapping(self, index: str) -> None:
+        payload = {"query": {"match_all": {}}}
+        logging.info(f"Deleting all documents from {index} index.")
+        self.client.delete_by_query(index=index, body=payload)
+        logging.info(f"Success deleting all documents from {index} index.")
+
     def get_indexes_data(self) -> dict:
         url = f"{self._aws_os_endpoint}"
         logging.info(f"Getting indexes object from {url}")
@@ -68,11 +74,19 @@ class OpenSearchClient(object):
             payload_string += json.dumps(doc) + "\n"
         return payload_string
 
-    def bulk_push_to_open_search(self, documents: List[dict], index: str = None) -> None:
+    def bulk_push_to_open_search(self, list_of_docs: List[dict], index: str = None) -> None:
         index = index or self._aws_os_index
-        payload = self._payload_constructor(documents, index)
+        payload = self._payload_constructor(list_of_docs, index)
+        logging.debug(f"Pushing the following payload: {payload}")
 
-        logging.info(f"Pushing {len(documents)} documents to {index} index.")
-        res = self.client.bulk(body=payload, index=index)
-        res.raise_for_status()
+        logging.info(f"Pushing {len(list_of_docs)} documents to {index} index.")
+        self.client.bulk(body=payload, index=index)
         logging.info(f"Success pushing documents to {index} index.")
+
+    def connection_check(self) -> bool:
+        logging.info(f"Checking connection to {self._aws_os_endpoint}.")
+        try:
+            assert self.client.ping()  # returns True if connection is successful
+        except AssertionError:
+            logging.error(f"Connection to {self._aws_os_endpoint} failed.")
+            return False

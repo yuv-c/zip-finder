@@ -6,7 +6,7 @@ import time
 from os_client import OpenSearchClient
 
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(lineno)d | %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
 ZIP_CODES_FILE = "zip-codes.xlsx"
 COL_INDEX_TO_NAME = {
@@ -145,7 +145,7 @@ async def print_cell_content(
     )
 
 
-async def cell_content_to_dict(
+def cell_content_to_dict(
         row_data: Tuple[
             cell.Cell,
             cell.Cell,
@@ -198,32 +198,36 @@ async def cell_content_to_dict(
 
 
 async def main() -> None:
-    rows_step_size = 1000
+    os_client = OpenSearchClient()
+
+    rows_step_size = 1000  # Window size
     work_sheet, open_workbook = get_excel_file_handles(file_path=ZIP_CODES_FILE)
     rows_number = work_sheet.max_row
     logging.info(f"Rows number: {rows_number}")
 
-    rows_number = 10000  # TODO: Remove
-
-    min_row = 1
-    max_row = 1000
-
+    min_row = 2  # skip header
+    window_min_row = min_row
+    window_max_row = window_min_row + rows_step_size - 1
     for number in range(min_row, rows_number, rows_step_size):
+        logging.info(f"Processing window: {window_min_row} - {window_max_row}")
+        list_to_push = []
         for row in yield_rows_from_work_sheet(
-                work_sheet=work_sheet, min_row=min_row, max_row=max_row
+                work_sheet=work_sheet, min_row=window_min_row, max_row=window_max_row
         ):
 
             if row[0].value is None:  # EOF
                 break
 
             try:
-                await print_cell_content(row_data=row)
+                list_to_push.append(cell_content_to_dict(row_data=row))
             except BadDataError:
                 await log_bad_address_to_file(row=row)
-                continue
 
-        min_row += rows_step_size
-        max_row += rows_step_size
+        window_min_row += rows_step_size
+        window_max_row += rows_step_size
+
+        os_client.bulk_push_to_open_search(list_of_docs=list_to_push)
+        logging.info(f"Finished processing window: {window_min_row} - {window_max_row}")
 
     open_workbook.close()
 
