@@ -145,6 +145,58 @@ async def print_cell_content(
     )
 
 
+async def cell_content_to_dict(
+        row_data: Tuple[
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+            cell.Cell,
+        ]
+) -> dict:
+    (
+        loc_id,
+        city_name,
+        street_id,
+        street_name,
+        house_num,
+        entrance,
+        zip_code,
+        remark,
+        updated,
+    ) = row_data
+    row_num = row_data[0].row
+
+    try:
+        list(map(verify_street_or_city_is_valid, (city_name.value, street_name.value)))
+        list(
+            map(
+                verify_numbers,
+                (house_num.value, street_id.value, loc_id.value, zip_code.value),
+            )
+        )
+    except BadDataError:
+        logging.warning(f"Row {row_num}: Invalid data, skipping")
+        return {}
+
+    return {
+        "row_num": row_num,
+        "loc_id": loc_id.value,
+        "city_name": city_name.value,
+        "street_id": street_id.value,
+        "street_name": street_name.value,
+        "house_number": house_num.value,
+        "entrance": entrance.value,
+        "zip_code": zip_code.value,
+        "remark": remark.value,
+        "updated": updated.value
+    }
+
+
 async def main() -> None:
     rows_step_size = 1000
     work_sheet, open_workbook = get_excel_file_handles(file_path=ZIP_CODES_FILE)
