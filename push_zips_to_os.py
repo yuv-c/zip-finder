@@ -208,7 +208,7 @@ async def main() -> None:
     min_row = 2  # skip header
     window_min_row = min_row
     window_max_row = window_min_row + rows_step_size - 1
-    for number in range(min_row, rows_number, rows_step_size):
+    for _ in range(min_row, rows_number, rows_step_size):
         logging.info(f"Processing window: {window_min_row} - {window_max_row}")
         list_to_push = []
         for row in yield_rows_from_work_sheet(
