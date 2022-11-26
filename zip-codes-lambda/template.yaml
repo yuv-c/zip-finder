@@ -30,11 +30,11 @@ Resources:
           Properties:
             Path: /hello
             Method: get
-          HelloWorldName:
-            Type: Api
-            Properties:
-              Path: /hello/{name}
-              Method: get
+        HelloWorldName:
+          Type: Api
+          Properties:
+            Path: /hello/{name}
+            Method: get
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
