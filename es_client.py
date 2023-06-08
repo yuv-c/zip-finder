@@ -1,10 +1,9 @@
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch import helpers
 import config
-import json
 import logging
 from typing import List, Optional, Dict, Any
-import random
+import pandas as pd
 
 class ElasticSearchClient(object):
     def __init__(self, es_endpoint: str = config.ES_ENDPOINT,
@@ -25,6 +24,7 @@ class ElasticSearchClient(object):
             connection_class=RequestsHttpConnection
         )
 
+    @property
     def client(self) -> Elasticsearch:
         return self._client
 
@@ -57,26 +57,25 @@ class ElasticSearchClient(object):
         return res
 
     @staticmethod
-    def _payload_constructor(data: List[dict], index: str) -> List[dict]:
-        actions = []
-        for row in data:
-            if not row:
-                continue
-            action = {"_index": index, "_id": int(row["loc_id"]), "_source": row}
-            actions.append(action)
+    def _payload_constructor(df: pd.DataFrame, index: str) -> List[dict]:
+        payload_df = pd.DataFrame()
 
-        return actions
+        payload_df["_id"] = df["ZIP 7"]
+        payload_df["_source"] = df.apply(dict, axis=1)
+        payload_df["_index"] = index
 
-    def bulk_push_to_elasticsearch(self, list_of_docs: List[dict], index: str = None) -> None:
-        if not list_of_docs:
+        return payload_df.to_dict("records")
+
+    def bulk_push_df_to_elasticsearch(self, df: pd.DataFrame, index: str = None) -> None:
+        if len(df.index) == 0:
             logging.warning("Empty list of documents provided. Nothing to push.")
             return
 
         index = index or self._es_index
-        payload = self._payload_constructor(list_of_docs, index)
+        payload = self._payload_constructor(df, index)
         logging.debug(f"Pushing the following payload: {payload}")
 
-        logging.info(f"Pushing {len(list_of_docs)} documents to {index} index.")
+        logging.info(f"Pushing {len(df)} documents to {index} index.")
         helpers.bulk(self._client, payload)
         logging.info(f"Success pushing documents to {index} index.")
 

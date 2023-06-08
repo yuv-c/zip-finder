@@ -1,14 +1,18 @@
 import asyncio
-from openpyxl import load_workbook, cell, worksheet, workbook
-from typing import Tuple, Iterable
 import logging
 import time
-from es_client import ElasticSearchClient  # import the ElasticSearch client
+from es_client import ElasticSearchClient
+import pandas as pd
+import os
+from dotenv import load_dotenv
 
-LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(lineno)d | %(message)s"
+
+LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(module)s | %(lineno)d | %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
-ZIP_CODES_FILE = "zip-codes-small.xlsx"
+load_dotenv()
+
+ZIP_CODES_FILE = "zip-codes.csv"
 COL_INDEX_TO_NAME = {
     1: "LocationID",
     2: "City Name",
@@ -21,182 +25,39 @@ COL_INDEX_TO_NAME = {
     9: "Updated",
 }
 
-"""
-interesting row props:
-every row is a tuple of cells
-
-every cell has:
-col_idx: integer
-row: integer
-value: probably str
-"""
-
 INDEX = "address-to-zip"
 
 
-def get_excel_file_handles(file_path: str) -> (worksheet, workbook):
-    work_book = load_workbook(filename=file_path, read_only=True)
-    return work_book.active, work_book
+def drop_missing_data(chunk: pd.DataFrame) -> pd.DataFrame:
+    return chunk.dropna(subset=["House Number", "Street Name", "Location Name", "ZIP 7"])
 
 
-class BadDataError(Exception):
-    pass
-
-
-def verify_street_or_city_is_valid(street_or_city: str) -> None:
-    if not street_or_city:
-        raise BadDataError
-    if street_or_city == "?":
-        raise BadDataError
-    try:
-        str(street_or_city)
-    except ValueError:
-        raise BadDataError
-
-
-def verify_numbers(number: str) -> None:
-    if not number or len(number) < 5:
-        raise BadDataError
-
-    try:
-        int(number)
-    except ValueError:
-        raise BadDataError
-
-
-def yield_rows_from_work_sheet(
-        work_sheet: worksheet, min_row: int, max_row: int
-) -> Iterable[
-    Tuple[
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-        cell.Cell,
-    ]
-]:
-    for row in work_sheet.iter_rows(min_row=min_row, max_row=max_row):
-        if row[0].value is None:
-            break
-        yield row
-
-
-async def log_bad_address_to_file(
-        row: Tuple[
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
+def drop_rows_with_bad_data(chunk: pd.DataFrame) -> pd.DataFrame:
+    bad_rows = chunk[
+        (chunk["StreetID"].str.len() < 5) |
+        (chunk["LocationID"].str.len() <= 0) |
+        (chunk["ZIP 7"].str.len() < 7) |
+        (chunk["House Number"] < 0) |
+        (~chunk["StreetID"].str.isnumeric()) |
+        (~chunk["LocationID"].str.isnumeric()) |
+        (~chunk["ZIP 7"].str.isnumeric())
         ]
-) -> None:
-    # You didn't think I'd actually implement this, did you?
-    pass
-
-
-async def print_cell_content(
-        row_data: Tuple[
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-        ]
-) -> None:
-    (
-        loc_id,
-        city_name,
-        street_id,
-        street_name,
-        house_num,
-        entrance,
-        zip_code,
-        remark,
-        updated,
-    ) = row_data
-    row_num = row_data[0].row
-
     try:
-        list(map(verify_street_or_city_is_valid, (city_name.value, street_name.value)))
-        list(
-            map(
-                verify_numbers,
-                (house_num.value, street_id.value, loc_id.value, zip_code.value),
-            )
-        )
-    except BadDataError:
-        logging.warning(f"Row {row_num}: Invalid data, skipping")
-        return
-
-    print(
-        f"Row {row_num}: {loc_id.value},"
-        f" {city_name.value}, {street_id.value}, {street_name.value}, {house_num.value}, "
-        f"{entrance.value}, {zip_code.value}, {remark.value}, {updated.value}"
-    )
+        chunk.drop(bad_rows.index, inplace=True)
+        return chunk
+    except Exception as e:
+        print(e)
+        return chunk
 
 
-def cell_content_to_dict(
-        row_data: Tuple[
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-            cell.Cell,
-        ]
-) -> dict:
-    (
-        loc_id,
-        city_name,
-        street_id,
-        street_name,
-        house_num,
-        entrance,
-        zip_code,
-        remark,
-        updated,
-    ) = row_data
-    row_num = row_data[0].row
-
-    try:
-        list(map(verify_street_or_city_is_valid, (city_name.value, street_name.value)))
-        list(
-            map(
-                verify_numbers,
-                (house_num.value, street_id.value, loc_id.value, zip_code.value),
-            )
-        )
-    except BadDataError:
-        logging.warning(f"Row {row_num}: Invalid data, skipping")
-        return {}
-
-    return {
-        "row_num": row_num,
-        "loc_id": loc_id.value,
-        "city_name": city_name.value,
-        "street_id": street_id.value,
-        "street_name": street_name.value,
-        "house_number": house_num.value,
-        "entrance": entrance.value,
-        "zip_code": zip_code.value,
-        "remark": remark.value,
-        "updated": updated.value
-    }
+def cast_types(chunk: pd.DataFrame) -> pd.DataFrame:
+    chunk["StreetID"] = chunk["StreetID"].astype(int).astype(str)
+    chunk["LocationID"] = chunk["LocationID"].astype(int).astype(str)
+    chunk["ZIP 7"] = chunk["ZIP 7"].astype(int).astype(str)
+    chunk["House Number"] = chunk["House Number"].astype(int)
+    chunk["Address Updated"] = pd.to_datetime(chunk["Updated"], format="%Y%m%d")
+    chunk["timestamp"] = pd.to_datetime("now")
+    return chunk
 
 
 async def create_index(es_client: ElasticSearchClient) -> None:
@@ -217,7 +78,9 @@ async def create_index(es_client: ElasticSearchClient) -> None:
                 "remark": {"type": "text",
                            "analyzer": "hebrew"},
                 "updated": {"type": "date",
-                            "format": "yyyyMMdd"}
+                            "format": "yyyy-MM-dd HH:mm:ss"},
+                "timestamp": {"type": "date",
+                              "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}
             }
         }
     }
@@ -225,43 +88,26 @@ async def create_index(es_client: ElasticSearchClient) -> None:
 
 
 async def main() -> None:
-    es_client = ElasticSearchClient(es_endpoint="localhost", es_index=INDEX,
+    es_client = ElasticSearchClient(es_endpoint=os.getenv("ES_ENDPOINT"), es_index=INDEX,
                                     es_port=9200)  # use the ElasticSearchClient
 
-    await create_index(es_client=es_client)
+    if input("Do you want to delete and recreate the index? (y/n)") == "y":
+        logging.info("Deleting index")
+        es_client.delete_index(index=INDEX)
+        logging.info(f"Index {INDEX} deleted. Creating index...")
+        await create_index(es_client=es_client)
 
-    rows_step_size = 1000  # Window size
-    work_sheet, open_workbook = get_excel_file_handles(file_path=ZIP_CODES_FILE)
-    rows_number = work_sheet.max_row
-    logging.info(f"Rows number: {rows_number}")
+    rows_step_size = 10000
+    csv_reader = pd.read_csv(ZIP_CODES_FILE, chunksize=rows_step_size)
 
-    min_row = 2  # skip header
-    window_min_row = min_row
-    window_max_row = window_min_row + rows_step_size - 1
-    for _ in range(min_row, rows_number, rows_step_size):
-        logging.info(f"Processing window: {window_min_row} - {window_max_row}")
-        list_to_push = []
-        for row in yield_rows_from_work_sheet(
-                work_sheet=work_sheet, min_row=window_min_row, max_row=window_max_row
-        ):
-
-            if row[0].value is not None:  # EOF
-                try:
-                    list_to_push.append(cell_content_to_dict(row_data=row))
-                except BadDataError:
-                    await log_bad_address_to_file(row=row)
-
-            else:
-                logging.info("EOF")
-                break
-
-        window_min_row += rows_step_size
-        window_max_row += rows_step_size
-
-        es_client.bulk_push_to_elasticsearch(list_of_docs=list_to_push, index=INDEX)
-        logging.info(f"Finished processing window: {window_min_row} - {window_max_row}")
-
-    open_workbook.close()
+    for chunk_num, chunk in enumerate(csv_reader):
+        logging.info(f"Processing chunk {chunk_num}")
+        chunk = drop_missing_data(chunk)
+        chunk = cast_types(chunk)
+        chunk = drop_rows_with_bad_data(chunk)
+        chunk.fillna("", inplace=True)
+        logging.info(f"Pushing chunk {chunk_num} to ES with {len(chunk.index)} rows")
+        es_client.bulk_push_df_to_elasticsearch(df=chunk, index=INDEX)
 
 
 if __name__ == "__main__":
