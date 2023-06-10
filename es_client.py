@@ -60,7 +60,7 @@ class ElasticSearchClient(object):
     def _payload_constructor(df: pd.DataFrame, index: str) -> List[dict]:
         payload_df = pd.DataFrame()
 
-        payload_df["_id"] = df["ZIP 7"]
+        payload_df["_id"] = df["zip_code"]
         payload_df["_source"] = df.apply(dict, axis=1)
         payload_df["_index"] = index
 

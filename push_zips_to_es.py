@@ -6,41 +6,40 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(module)s | %(lineno)d | %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
 load_dotenv()
 
 ZIP_CODES_FILE = "zip-codes.csv"
-COL_INDEX_TO_NAME = {
-    1: "LocationID",
-    2: "City Name",
-    3: "StreetID",
-    4: "Street Name",
-    5: "House Number",
-    6: "Entrance",
-    7: "ZIP 7",
-    8: "Remark",
-    9: "Updated",
-}
+COL_NAMES = [
+    'city_id',
+    'city_name',
+    'street_id',
+    'street_name',
+    'house_number',
+    'entrance',
+    'zip_code',
+    'remark',
+    'updated'
+]
 
 INDEX = "address-to-zip"
 
 
 def drop_missing_data(chunk: pd.DataFrame) -> pd.DataFrame:
-    return chunk.dropna(subset=["House Number", "Street Name", "Location Name", "ZIP 7"])
+    return chunk.dropna(subset=["house_number", "street_name", "city_name", "zip_code"])
 
 
 def drop_rows_with_bad_data(chunk: pd.DataFrame) -> pd.DataFrame:
     bad_rows = chunk[
-        (chunk["StreetID"].str.len() < 5) |
-        (chunk["LocationID"].str.len() <= 0) |
-        (chunk["ZIP 7"].str.len() < 7) |
-        (chunk["House Number"] < 0) |
-        (~chunk["StreetID"].str.isnumeric()) |
-        (~chunk["LocationID"].str.isnumeric()) |
-        (~chunk["ZIP 7"].str.isnumeric())
+        (chunk["street_id"].str.len() < 5) |
+        (chunk["city_id"].str.len() <= 0) |
+        (chunk["zip_code"].str.len() < 7) |
+        (chunk["house_number"].astype(int) < 0) |
+        (~chunk["street_id"].str.isnumeric()) |
+        (~chunk["city_id"].str.isnumeric()) |
+        (~chunk["zip_code"].str.isnumeric())
         ]
     try:
         chunk.drop(bad_rows.index, inplace=True)
@@ -51,11 +50,12 @@ def drop_rows_with_bad_data(chunk: pd.DataFrame) -> pd.DataFrame:
 
 
 def cast_types(chunk: pd.DataFrame) -> pd.DataFrame:
-    chunk["StreetID"] = chunk["StreetID"].astype(int).astype(str)
-    chunk["LocationID"] = chunk["LocationID"].astype(int).astype(str)
-    chunk["ZIP 7"] = chunk["ZIP 7"].astype(int).astype(str)
-    chunk["House Number"] = chunk["House Number"].astype(int)
-    chunk["Address Updated"] = pd.to_datetime(chunk["Updated"], format="%Y%m%d")
+    chunk["street_id"] = chunk["street_id"].astype(int).astype(str)
+    chunk["city_id"] = chunk["city_id"].astype(int).astype(str)
+    chunk["zip_code"] = chunk["zip_code"].astype(int).astype(str)
+    chunk["house_number"] = chunk["house_number"].astype(str)  # To enable free
+    chunk["updated"] = pd.to_datetime(chunk["updated"], format="%Y%m%d")
+    chunk["updated"] = chunk["updated"].dt.strftime("%Y-%m-%d %H:%M:%S")
     chunk["timestamp"] = pd.to_datetime("now")
     return chunk
 
@@ -64,8 +64,7 @@ async def create_index(es_client: ElasticSearchClient) -> None:
     mapping = {
         "mappings": {
             "properties": {
-                "row_num": {"type": "integer"},
-                "loc_id": {"type": "integer"},
+                "city_id": {"type": "integer"},
                 "city_name": {"type": "text",
                               "analyzer": "hebrew"},
                 "street_id": {"type": "integer"},
@@ -98,14 +97,19 @@ async def main() -> None:
         await create_index(es_client=es_client)
 
     rows_step_size = 10000
-    csv_reader = pd.read_csv(ZIP_CODES_FILE, chunksize=rows_step_size)
+    csv_reader = pd.read_csv(ZIP_CODES_FILE, chunksize=rows_step_size, names=COL_NAMES, header=None)
 
     for chunk_num, chunk in enumerate(csv_reader):
         logging.info(f"Processing chunk {chunk_num}")
+
+        if chunk_num == 0:  # skip header
+            chunk = chunk[1:]
+
         chunk = drop_missing_data(chunk)
         chunk = cast_types(chunk)
         chunk = drop_rows_with_bad_data(chunk)
         chunk.fillna("", inplace=True)
+
         logging.info(f"Pushing chunk {chunk_num} to ES with {len(chunk.index)} rows")
         es_client.bulk_push_df_to_elasticsearch(df=chunk, index=INDEX)
 
