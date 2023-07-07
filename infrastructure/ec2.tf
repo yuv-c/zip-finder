@@ -8,7 +8,8 @@ resource "aws_instance" "es_kibana_instance" {
   instance_type = "r5d.large"
   key_name      = aws_key_pair.my_key.key_name
 
-  vpc_security_group_ids = [aws_security_group.es_kibana_sg.id]
+  vpc_security_group_ids = [aws_security_group.public_es_sg.id]
+  subnet_id              = aws_subnet.subnet_es_ec2.id
 
   tags = {
     Name = "ESKibana"
@@ -105,9 +106,14 @@ resource "aws_lambda_function" "stop_ec2" {
   tags = {
     Name = "stop_ec2_lambda"
   }
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.subnet_zip_api.id, aws_subnet.subnet_es_ec2.id]
+    security_group_ids = [aws_security_group.public_es_sg.id]
+  }
 }
 
-resource "aws_sns_topic" "alarm_topic" {
+resource "aws_sns_topic" "stop_ec2_sns_topic" {
   name = "alarm-topic"
 }
 
@@ -116,11 +122,11 @@ resource "aws_lambda_permission" "sns" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.stop_ec2.function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.alarm_topic.arn
+  source_arn    = aws_sns_topic.stop_ec2_sns_topic.arn
 }
 
 resource "aws_sns_topic_subscription" "lambda_subscription" {
-  topic_arn = aws_sns_topic.alarm_topic.arn
+  topic_arn = aws_sns_topic.stop_ec2_sns_topic.arn
   protocol  = "lambda"
   endpoint  = aws_lambda_function.stop_ec2.arn
 }
@@ -135,7 +141,7 @@ resource "aws_cloudwatch_metric_alarm" "idle_ec2" {
   statistic           = "SampleCount"
   threshold           = "10"
   alarm_description   = "This metric checks if EC2 instance is idle for 30 minutes"
-  alarm_actions       = [aws_sns_topic.alarm_topic.arn]
+  alarm_actions       = [aws_sns_topic.stop_ec2_sns_topic.arn]
 
   dimensions = {
     InstanceId = aws_instance.es_kibana_instance.id
@@ -152,7 +158,7 @@ resource "aws_cloudwatch_metric_alarm" "long_running_ec2" {
   statistic           = "SampleCount"
   threshold           = "1"    # CPU utilization sample count
   alarm_description   = "This metric checks if EC2 instance is running for more than 5 hours"
-  alarm_actions       = [aws_sns_topic.alarm_topic.arn]
+  alarm_actions       = [aws_sns_topic.stop_ec2_sns_topic.arn]
 
   dimensions = {
     InstanceId = aws_instance.es_kibana_instance.id

@@ -1,4 +1,4 @@
-resource "aws_security_group" "es_kibana_sg" {
+resource "aws_security_group" "public_es_sg" {
   name        = "es_kibana_sg"
   description = "Allow inbound and outbound traffic for Kibana, ES, and SSH"
 
@@ -19,11 +19,20 @@ resource "aws_security_group" "es_kibana_sg" {
   }
 
   ingress {
-    from_port   = 9200
-    to_port     = 9300
+    from_port       = 9200
+    to_port         = 9200
+    protocol        = "tcp"
+    cidr_blocks     = ["0.0.0.0/0"]
+    description     = "Elasticsearch"
+    security_groups = [aws_security_group.public_es_sg.id]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Elasticsearch"
+    description = "HTTP to Lambda GET"
   }
 
   egress {
