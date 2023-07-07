@@ -24,7 +24,6 @@ resource "aws_security_group" "public_es_sg" {
     protocol        = "tcp"
     cidr_blocks     = ["0.0.0.0/0"]
     description     = "Elasticsearch"
-    security_groups = [aws_security_group.public_es_sg.id]
   }
 
   ingress {

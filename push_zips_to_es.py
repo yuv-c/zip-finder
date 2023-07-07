@@ -60,6 +60,11 @@ def cast_types(chunk: pd.DataFrame) -> pd.DataFrame:
     return chunk
 
 
+def add_full_address_field(chunk: pd.DataFrame) -> pd.DataFrame:
+    chunk["full_address"] = chunk["city_name"] + " " + chunk["street_name"]
+    return chunk
+
+
 async def create_index(es_client: ElasticSearchClient) -> None:
     mapping = {
         "mappings": {
@@ -108,6 +113,7 @@ async def main() -> None:
         chunk = drop_missing_data(chunk)
         chunk = cast_types(chunk)
         chunk = drop_rows_with_bad_data(chunk)
+        chunk = add_full_address_field(chunk)
         chunk.fillna("", inplace=True)
 
         logging.info(f"Pushing chunk {chunk_num} to ES with {len(chunk.index)} rows")

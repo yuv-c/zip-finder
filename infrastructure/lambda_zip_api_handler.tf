@@ -1,9 +1,3 @@
-resource "aws_lambda_layer_version" "request_lib" {
-  filename            = "request_lib.zip"
-  layer_name          = "request_lib"
-  compatible_runtimes = ["python3.10"]
-}
-
 data "archive_file" "query_es_zip" {
   type        = "zip"
   source_file = "${path.module}/query_es.py"
@@ -16,7 +10,6 @@ resource "aws_lambda_function" "query_es_lambda" {
   role          = aws_iam_role.lambda_es_query.arn
   handler       = "query_es.lambda_handler"
   runtime       = "python3.10"
-  layers        = [aws_lambda_layer_version.request_lib.arn]
 
   tags = {
     Name = "query_es_lambda"
