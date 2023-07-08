@@ -1,5 +1,5 @@
 provider "aws" {
-  region  = "eu-central-1"
+  region  = var.region
   profile = "zip-codes-prod"
 }
 
@@ -65,6 +65,11 @@ resource "aws_iam_role" "lambda_ec2_manager" {
       },
     ]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_ec2_manager_vpc" {
+  role       = aws_iam_role.lambda_ec2_manager.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_role_policy" "ec2_stop" {

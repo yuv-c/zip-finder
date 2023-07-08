@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     }
 
     es_endpoint = os.getenv('ES_ENDPOINT')
-    response = requests.get(f"http://{es_endpoint}/address-to-zip/_search", json=query)
+    response = requests.get(f"http://{es_endpoint}:9200/address-to-zip/_search", json=query)
     es_response = response.json()
 
     # TODO: Process the response

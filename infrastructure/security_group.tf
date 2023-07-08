@@ -1,6 +1,7 @@
 resource "aws_security_group" "public_es_sg" {
   name        = "es_kibana_sg"
   description = "Allow inbound and outbound traffic for Kibana, ES, and SSH"
+  vpc_id      = aws_vpc.main_vpc.id
 
   ingress {
     from_port   = 22
@@ -19,16 +20,24 @@ resource "aws_security_group" "public_es_sg" {
   }
 
   ingress {
-    from_port       = 9200
-    to_port         = 9200
-    protocol        = "tcp"
-    cidr_blocks     = ["0.0.0.0/0"]
-    description     = "Elasticsearch"
+    from_port   = 9200
+    to_port     = 9200
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Elasticsearch"
   }
 
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTP to Lambda GET"
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     description = "HTTP to Lambda GET"

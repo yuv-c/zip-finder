@@ -80,21 +80,37 @@ resource "aws_api_gateway_resource" "query_lambda" {
   path_part   = "zip-api"
 }
 
-resource "aws_api_gateway_method" "get_zip_api" {
+resource "aws_api_gateway_method" "post_zip_api" {
   rest_api_id   = aws_api_gateway_rest_api.es_zip_gateway_rest_api.id
   resource_id   = aws_api_gateway_resource.query_lambda.id
-  http_method   = "GET"
+  http_method   = "POST"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "lambda_to_es_gateway_integration" {
   rest_api_id = aws_api_gateway_rest_api.es_zip_gateway_rest_api.id
   resource_id = aws_api_gateway_resource.query_lambda.id
-  http_method = aws_api_gateway_method.get_zip_api.http_method
+  http_method = aws_api_gateway_method.post_zip_api.http_method
 
   type = "AWS_PROXY"
 
   integration_http_method = "POST"
   uri                     = aws_lambda_function.query_es_lambda.invoke_arn
 }
+
+resource "aws_api_gateway_deployment" "api_gateway_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.lambda_to_es_gateway_integration,
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.es_zip_gateway_rest_api.id
+  stage_name  = "prod"
+  stage_description = "Production stage"
+  description = "Deployment to production stage"
+}
+
+output "invoke_url" {
+  value = "https://${aws_api_gateway_rest_api.es_zip_gateway_rest_api.id}.execute-api.${var.region}.amazonaws.com/prod"
+}
+
 
