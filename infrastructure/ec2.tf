@@ -81,13 +81,7 @@ resource "aws_iam_role_policy" "ec2_stop" {
     Statement = [
       {
         Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "ec2:Stop*",
-          "ec2:CreateNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-          "ec2:DeleteNetworkInterface"
+          "ec2:Stop*"
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -116,7 +110,7 @@ resource "aws_lambda_function" "stop_ec2" {
   }
 
   vpc_config {
-    subnet_ids         = [aws_subnet.subnet_zip_api.id, aws_subnet.subnet_es_ec2.id]
+    subnet_ids         = [aws_subnet.subnet_es_ec2.id]
     security_group_ids = [aws_security_group.public_es_sg.id]
   }
 }
