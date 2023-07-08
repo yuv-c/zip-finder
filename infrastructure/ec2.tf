@@ -84,7 +84,10 @@ resource "aws_iam_role_policy" "ec2_stop" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
-          "ec2:Stop*"
+          "ec2:Stop*",
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface"
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -93,20 +96,20 @@ resource "aws_iam_role_policy" "ec2_stop" {
   })
 }
 
-data "archive_file" "lambda_zip" {
+data "archive_file" "stop_ec2_lambda_zip" {
   type        = "zip"
   source_file = "${path.module}/stop_ec2_alarm_handler.py"
-  output_path = "${path.module}/function.zip"
+  output_path = "${path.module}/stop_ec2_alarm_handler.zip"
 }
 
 resource "aws_lambda_function" "stop_ec2" {
-  filename      = "${path.module}/function.zip"
-  function_name = "stop_ec2"
+  filename      = "${path.module}/stop_ec2_alarm_handler.zip"
+  function_name = "stop_ec2_alarm_handler"
   role          = aws_iam_role.lambda_ec2_manager.arn
-  handler       = "stop_ec2.handler"
+  handler       = "stop_ec2_alarm_handler.handler"
   runtime       = "python3.10"
 
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  source_code_hash = data.archive_file.stop_ec2_lambda_zip.output_base64sha256
 
   tags = {
     Name = "stop_ec2_lambda"

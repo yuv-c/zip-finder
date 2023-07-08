@@ -16,7 +16,7 @@ resource "aws_lambda_function" "query_es_lambda" {
   role          = aws_iam_role.lambda_es_query.arn
   handler       = "query_es.lambda_handler"
   runtime       = "python3.10"
-  layers = [aws_lambda_layer_version.lambda_layer.arn]
+  layers        = [aws_lambda_layer_version.lambda_layer.arn]
 
   tags = {
     Name = "query_es_lambda"
@@ -86,5 +86,5 @@ resource "aws_lambda_permission" "apigw_lambda" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.query_es_lambda.function_name
   principal     = "apigateway.amazonaws.com"
-    source_arn = "${replace(aws_api_gateway_deployment.api_gateway_deployment.execution_arn, var.stage_name, "")}*/*"
+  source_arn    = "${replace(aws_api_gateway_deployment.api_gateway_deployment.execution_arn, var.stage_name, "")}*/*"
 }
