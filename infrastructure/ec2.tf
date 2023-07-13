@@ -136,7 +136,7 @@ resource "aws_cloudwatch_metric_alarm" "idle_ec2" {
   namespace           = "AWS/EC2"
   period              = "900"  # 15 minutes
   statistic           = "SampleCount"
-  threshold           = "10"
+  threshold           = "20"
   alarm_description   = "This metric checks if EC2 instance is idle for 30 minutes"
   alarm_actions       = [aws_sns_topic.stop_ec2_sns_topic.arn]
 
