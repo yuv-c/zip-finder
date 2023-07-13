@@ -69,7 +69,7 @@ resource "aws_iam_role" "lambda_ec2_manager" {
 
 resource "aws_iam_role_policy_attachment" "lambda_ec2_manager_vpc" {
   role       = aws_iam_role.lambda_ec2_manager.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_iam_role_policy" "ec2_stop" {
@@ -84,7 +84,7 @@ resource "aws_iam_role_policy" "ec2_stop" {
           "ec2:Stop*"
         ]
         Effect   = "Allow"
-        Resource = "*"
+        Resource = aws_instance.es_kibana_instance.arn
       },
     ]
   })
@@ -107,11 +107,6 @@ resource "aws_lambda_function" "stop_ec2" {
 
   tags = {
     Name = "stop_ec2_lambda"
-  }
-
-  vpc_config {
-    subnet_ids         = [aws_subnet.subnet_es_ec2.id]
-    security_group_ids = [aws_security_group.public_es_sg.id]
   }
 }
 
