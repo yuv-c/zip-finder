@@ -3,6 +3,12 @@ import os
 import re
 import requests
 from typing import Tuple
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(module)s | %(lineno)d | %(message)s"
+logging.basicConfig(format=LOG_FORMAT)
 
 
 def process_zip_code(zip_code: str) -> Tuple[str, str]:
@@ -21,7 +27,13 @@ def process_zip_code(zip_code: str) -> Tuple[str, str]:
 
 
 def lambda_handler(event, context):
-    zip_code = event.get('zip_code')
+    logger.info(f"Received event: {event}")
+
+    body = json.loads(event.get('body'))
+
+    zip_code = body.get('zip_code')
+
+    logger.info(f"Received zip_code: {zip_code}")
 
     house_number, address = process_zip_code(zip_code)
 
