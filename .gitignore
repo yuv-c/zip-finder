@@ -1,3 +1,4 @@
 /scrap_zips.py
 .env
 */build/*
+/infrastructure/client/build/
