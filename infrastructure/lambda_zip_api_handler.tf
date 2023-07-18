@@ -24,7 +24,8 @@ resource "aws_lambda_function" "query_es_lambda" {
 
   environment {
     variables = {
-      ES_ENDPOINT = aws_instance.es_kibana_instance.private_ip
+      ES_ENDPOINT    = aws_instance.es_kibana_instance.private_ip
+      CLOUDFRONT_URL = "https://${aws_cloudfront_distribution.s3_distribution_prod.domain_name}"
     }
   }
 

@@ -74,8 +74,14 @@ def lambda_handler(event, context):
 
     # TODO: Process the response
     processed_response = es_response
+    logger.info(f"CLOUDFRONT_URL: {os.getenv('CLOUDFRONT_URL')}")
 
     return {
         'statusCode': 200,
-        'body': json.dumps(processed_response)
+        'body': json.dumps(processed_response),
+        'headers': {
+            'Access-Control-Allow-Origin': os.getenv('CLOUDFRONT_URL'),
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
+        },
     }
