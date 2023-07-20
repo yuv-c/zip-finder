@@ -37,6 +37,7 @@ def drop_rows_with_bad_data(chunk: pd.DataFrame) -> pd.DataFrame:
         (chunk["city_id"].str.len() <= 0) |
         (chunk["zip_code"].str.len() < 7) |
         (chunk["house_number"].astype(int) < 0) |
+        (chunk["street_name"] == "?") |
         (~chunk["street_id"].str.isnumeric()) |
         (~chunk["city_id"].str.isnumeric()) |
         (~chunk["zip_code"].str.isnumeric())
