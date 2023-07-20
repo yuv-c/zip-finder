@@ -10,6 +10,12 @@ logger.setLevel(logging.INFO)
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(module)s | %(lineno)d | %(message)s"
 logging.basicConfig(format=LOG_FORMAT)
 
+HEADERS = {
+    'Access-Control-Allow-Origin': os.getenv('CLOUDFRONT_URL'),
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+}
+
 
 def process_zip_code(zip_code: str) -> Tuple[str, str]:
     house_number = re.search(r'\d+', zip_code)
@@ -29,59 +35,64 @@ def process_zip_code(zip_code: str) -> Tuple[str, str]:
 def lambda_handler(event, context):
     logger.info(f"Received event: {event}")
 
-    body = json.loads(event.get('body'))
+    try:
+        body = json.loads(event.get('body'))
 
-    zip_code = body.get('zip_code')
+        zip_code = body.get('zip_code')
 
-    logger.info(f"Received zip_code: {zip_code}")
+        logger.info(f"Received zip_code: {zip_code}")
 
-    house_number, address = process_zip_code(zip_code)
+        house_number, address = process_zip_code(zip_code)
 
-    query = {
-        "query": {
-            "bool": {
-                "should": [
-                    {
-                        "multi_match": {
-                            "query": address,
-                            "fields": ["city_name", "street_name"]
-                        }
-                    },
-                    {
-                        "match": {
-                            "full_address": {
+        query = {
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "multi_match": {
                                 "query": address,
-                                "fuzziness": "AUTO"
+                                "fields": ["city_name", "street_name"]
+                            }
+                        },
+                        {
+                            "match": {
+                                "full_address": {
+                                    "query": address,
+                                    "fuzziness": "AUTO"
+                                }
                             }
                         }
-                    }
-                ],
-                "must": [
-                    {
-                        "match": {
-                            "house_number": house_number
+                    ],
+                    "must": [
+                        {
+                            "match": {
+                                "house_number": house_number
+                            }
                         }
-                    }
-                ]
-            }
-        },
-        "size": 5
-    }
+                    ]
+                }
+            },
+            "size": 5
+        }
 
-    es_endpoint = os.getenv('ES_ENDPOINT')
-    response = requests.get(f"http://{es_endpoint}:9200/address-to-zip/_search", json=query)
-    es_response = response.json()
+        es_endpoint = os.getenv('ES_ENDPOINT')
+        response = requests.get(f"http://{es_endpoint}:9200/address-to-zip/_search", json=query)
+        es_response = response.json()
 
-    # TODO: Process the response
-    processed_response = es_response
-    logger.info(f"CLOUDFRONT_URL: {os.getenv('CLOUDFRONT_URL')}")
+        # TODO: Process the response
+        processed_response = es_response
+        logger.info(f"Processed response: {processed_response}")
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps(processed_response),
-        'headers': {
-            'Access-Control-Allow-Origin': os.getenv('CLOUDFRONT_URL'),
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-        },
-    }
+        return {
+            'statusCode': 200,
+            'body': json.dumps(processed_response),
+            'headers': HEADERS,
+        }
+
+    except ValueError as e:
+        logger.error(f"ValueError caught: {e}")
+        return {
+            'statusCode': 400,
+            'body': json.dumps({"error": str(e)}),
+            'headers': HEADERS,
+        }

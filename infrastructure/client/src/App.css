@@ -1,0 +1,14 @@
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.App {
+    background: #eaeaea;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    color: red;
+}

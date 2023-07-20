@@ -1,8 +1,11 @@
+import SearchZIPCodes from './SearchZIPCodes';
+import './App.css';
+
 function App() {
   return (
-    <div>
-      <h1>Hello, world!</h1>
-      <p>foo</p>
+    <div className="App">
+      <h1>Not Israel Post</h1>
+      <SearchZIPCodes />
     </div>
   );
 }

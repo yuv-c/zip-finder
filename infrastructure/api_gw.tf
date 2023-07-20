@@ -50,6 +50,9 @@ resource "aws_api_gateway_deployment" "api_gateway_deployment" {
   triggers = {
     redeployment = sha1(jsonencode(aws_api_gateway_integration.post_lambda_to_es))
     redeployment = sha1(jsonencode(aws_api_gateway_integration.options_lambda_to_es))
+    redeployment = sha1(jsonencode(aws_api_gateway_method.post_zip_api))
+    redeployment = sha1(jsonencode(aws_api_gateway_method.options_zip_api))
+    redeployment = sha1(jsonencode(aws_api_gateway_resource.zip-api))
   }
 
   lifecycle {
@@ -95,10 +98,15 @@ resource "aws_api_gateway_integration_response" "options_zip-api" {
   rest_api_id = aws_api_gateway_rest_api.zip_rest_api.id
   status_code = aws_api_gateway_method_response.options_zip-api_response.status_code
 
+  response_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'",
     "method.response.header.Access-Control-Allow-Origin"  = "'https://${aws_cloudfront_distribution.s3_distribution_prod.domain_name}'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'https://${aws_cloudfront_distribution.s3_distribution_prod.domain_name}:3000'"
   }
 }
 
