@@ -5,10 +5,15 @@ html, body, #root {
 }
 
 .App {
-    background: #eaeaea;
+    background: white;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
     color: red;
+}
+
+/*.App and also an image */
+.App img{
+    padding-top: 50px;
 }

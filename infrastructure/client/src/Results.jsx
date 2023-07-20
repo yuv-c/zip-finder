@@ -26,7 +26,7 @@ export default function Results({ results }) {
     <div className="results-container open">
       {getTopResults().map(result => (
         <div key={result.zip_code} className="result-item" onClick={() => copyZIPCodeToClipboard(result.zip_code)}>
-          <h3>{result.city_name}</h3>
+          <h3>City: {result.city_name}</h3>
           <p>Street: {result.street_name}</p>
           <p>House Number: {result.house_number}</p>
           <p>Entrance: {result.entrance}</p>

@@ -18,6 +18,7 @@ export default function ZIPCodeInputField({input, setInput, onClick}) {
         value={input}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
+        placeholder="Enter your address in Hebrew, including house number, and press Enter"
       />
     </div>
   );
