@@ -2,11 +2,7 @@
     width: 100%;
     max-height: 370px;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     padding: 20px;
-    gap: 20px;
     box-sizing: border-box;
     background-color: #eaeaea;
     opacity: 0;
@@ -20,23 +16,30 @@
     transform: translateY(0);
 }
 
-.result-item {
+table {
     width: 100%;
+    border-collapse: collapse;
+    color: #000;
     border-radius: 8px;
-    padding: 5px;
-    height: 70px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    justify-content: space-between;
-    color: white;
+}
+
+table, th, td {
+    border: 1px solid #d2d2d2;
+}
+
+th {
+    padding: 10px 15px;
     background-color: #000000;
-    border-color: #4c5da4;
+    color: white;
+    text-align: left;
+}
+
+td {
+    padding: 5px 15px;
     cursor: pointer;
 }
 
-.result-item:hover {
+tr:hover {
     background-color: #313552;
     transition: background-color 0.5s ease;
 }

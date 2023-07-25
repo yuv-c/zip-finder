@@ -18,7 +18,8 @@ export default function ZIPCodeInputField({input, setInput, onClick}) {
         value={input}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
-        placeholder="Enter your address in Hebrew, including house number, and press Enter"
+        placeholder="הכנס את הכתובת בפורמט הבא - רחוב ומספר בית, עיר (עיר מופרדת ע״י פסיק): הורדים 5, ירושלים"
+        dir={'rtl'}
       />
     </div>
   );

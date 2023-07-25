@@ -22,18 +22,30 @@ export default function Results({ results }) {
     }
   }
 
-  return (
+return (
     <div className="results-container open">
-      {getTopResults().map(result => (
-        <div key={result.zip_code} className="result-item" onClick={() => copyZIPCodeToClipboard(result.zip_code)}>
-          <h3>City: {result.city_name}</h3>
-          <p>Street: {result.street_name}</p>
-          <p>House Number: {result.house_number}</p>
-          <p>Entrance: {result.entrance}</p>
-          <p>Document Score: {result.score}</p>
-          <p>ZIP Code: {result.zip_code}</p>
-        </div>
-      ))}
+      <table>
+        <thead>
+          <tr>
+            <th>City</th>
+            <th>Street</th>
+            <th>House Number</th>
+            <th>Document Score</th>
+            <th>ZIP Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          {getTopResults().map(result => (
+            <tr key={result.zip_code} onClick={() => copyZIPCodeToClipboard(result.zip_code)}>
+              <td>{result.city_name}</td>
+              <td>{result.street_name}</td>
+              <td>{result.house_number}</td>
+              <td>{result.score}</td>
+              <td>{result.zip_code}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
