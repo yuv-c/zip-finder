@@ -85,7 +85,7 @@ def lambda_handler(event, context):
                         },
                         {
                             "match": {
-                                "house_number": 21
+                                "house_number": house_number
                             }
                         }
                     ]
