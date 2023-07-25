@@ -17,19 +17,14 @@ HEADERS = {
 }
 
 
-def process_zip_code(zip_code: str) -> Tuple[str, str]:
-    house_number = re.search(r'\d+', zip_code)
+def process_input(input_string: str) -> Tuple[str, str, str]:
+    address, city = [x.strip() for x in input_string.split(",")]
 
-    if house_number is None:
-        raise ValueError('No house number found in the provided address.')
-    else:
-        house_number = house_number.group()
+    house_number = re.search(r'\d+', address).group()
 
-    address = re.sub(r'\s*\b' + house_number + r'\b\s*', ' ', zip_code)
+    street_name = re.sub(house_number, '', address).strip()
 
-    address = address.strip()
-
-    return house_number, address
+    return street_name, house_number, city
 
 
 def lambda_handler(event, context):
@@ -38,35 +33,59 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event.get('body'))
 
-        zip_code = body.get('zip_code')
+        input_string = body.get('zip_code')
 
-        logger.info(f"Received zip_code: {zip_code}")
+        logger.info(f"Received address: {input_string}")
 
-        house_number, address = process_zip_code(zip_code)
+        street, house_number, city = process_input(input_string)
 
         query = {
             "query": {
                 "bool": {
-                    "should": [
+                    "must": [
                         {
-                            "multi_match": {
-                                "query": address,
-                                "fields": ["city_name", "street_name"]
+                            "bool": {
+                                "should": [
+                                    {
+                                        "fuzzy": {
+                                            "street_name.keyword": {
+                                                "value": street,
+                                                "prefix_length": 2,
+                                                "max_expansions": 100
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "street_name.keyword": street
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "fuzzy": {
+                                            "city_name.keyword": {
+                                                "value": city,
+                                                "prefix_length": 3,
+                                                "max_expansions": 100
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "city_name.keyword": city
+                                        }
+                                    }
+                                ]
                             }
                         },
                         {
                             "match": {
-                                "full_address": {
-                                    "query": address,
-                                    "fuzziness": "AUTO"
-                                }
-                            }
-                        }
-                    ],
-                    "must": [
-                        {
-                            "match": {
-                                "house_number": house_number
+                                "house_number": 21
                             }
                         }
                     ]
@@ -79,7 +98,6 @@ def lambda_handler(event, context):
         response = requests.get(f"http://{es_endpoint}:9200/address-to-zip/_search", json=query)
         es_response = response.json()
 
-        # TODO: Process the response
         processed_response = es_response
         logger.info(f"Processed response: {processed_response}")
 
