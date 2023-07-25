@@ -71,24 +71,52 @@ async def create_index(es_client: ElasticSearchClient) -> None:
         "mappings": {
             "properties": {
                 "city_id": {"type": "integer"},
-                "city_name": {"type": "text",
-                              "analyzer": "hebrew"},
+                "city_name": {
+                    "type": "text",
+                    "analyzer": "hebrew",
+                    "fields": {
+                        "keyword": {"type": "keyword"}
+                    }
+                },
+                "city_name_text": {"type": "text"},
+                # TODO: Remove?
                 "street_id": {"type": "integer"},
-                "street_name": {"type": "text",
-                                "analyzer": "hebrew"},
+                "street_name": {
+                    "type": "text",
+                    "analyzer": "hebrew",
+                    "fields": {
+                        "keyword": {"type": "keyword"}
+                    }
+                },
                 "house_number": {"type": "text"},
-                "entrance": {"type": "text",
-                             "analyzer": "hebrew"},
+                "entrance": {
+                    "type": "text",
+                    "analyzer": "hebrew"
+                },
                 "zip_code": {"type": "integer"},
-                "remark": {"type": "text",
-                           "analyzer": "hebrew"},
-                "updated": {"type": "date",
-                            "format": "yyyy-MM-dd HH:mm:ss"},
-                "timestamp": {"type": "date",
-                              "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"}
+                "remark": {
+                    "type": "text",
+                    "analyzer": "hebrew"
+                },
+                "updated": {
+                    "type": "date",
+                    "format": "yyyy-MM-dd HH:mm:ss"
+                },
+                "timestamp": {
+                    "type": "date",
+                    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+                },
+                "full_address": {
+                    "type": "text",
+                    "analyzer": "hebrew",
+                    "fields": {
+                        "keyword": {"type": "keyword"}
+                    }
+                }
             }
         }
     }
+
     es_client.create_index(index=INDEX, body=mapping)
 
 
