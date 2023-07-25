@@ -111,6 +111,6 @@ def lambda_handler(event, context):
         logger.error(f"ValueError caught: {e}")
         return {
             'statusCode': 400,
-            'body': json.dumps({"error": str(e)}),
+            'body': json.dumps({"error": f"Bad Request. Input must be of format 'STREET HOUSE_NUMBER, CITY'"}),
             'headers': HEADERS,
         }

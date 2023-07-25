@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React from 'react'
 import { toast } from 'react-toastify';
 import { useState } from "react"
 import Results from './Results.jsx'
@@ -10,15 +10,6 @@ const API_URL = 'https://45xdbeisu1.execute-api.eu-central-1.amazonaws.com/prod/
 export default function SearchZIPCodes({ setIsLoading }) {
   const [address, setAddress] = useState([])
   const [results, setResults] = useState([])
-
-  const areResultsEmpty = useMemo(() => !results.length, [results]);
-
-
-  useEffect(() => {
-    if (areResultsEmpty && address.length) {
-      toast.info('No results found')
-    }
-  }, [areResultsEmpty])
 
   async function onSearch(zipCode) {
     setIsLoading(true)
@@ -58,7 +49,7 @@ export default function SearchZIPCodes({ setIsLoading }) {
   return (
     <div className="search-container">
       <AddressInputField input={address} setInput={setAddress} onClick={onSearch} />
-      <Results results={results} />
+      <Results results={results} searchPerformed={Boolean(address)} />
     </div>
   );
 }
