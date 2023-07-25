@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function ZIPCodeInputField({input, setInput, onClick}) {
+export default function AddressInputField({input, setInput, onClick}) {
   const handleInputChange = (event) => {
     setInput(event.target.value);
   }
