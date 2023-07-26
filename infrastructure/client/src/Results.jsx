@@ -4,16 +4,15 @@ import { useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 
 export default function Results({ results, searchPerformed }) {
-  const areResultsEmpty = results.hits?.total?.value === 0
+  const areResultsEmpty = useMemo(() => !results.length || (results.hits?.total?.value === 0), [results]);
 
   useEffect(() => {
-  if (areResultsEmpty && searchPerformed) {
-    toast.info('No results found');
-  }
-}, [areResultsEmpty, searchPerformed]);
+    if (areResultsEmpty && searchPerformed) {
+      toast.info('No results found');
+    }
+  }, [areResultsEmpty, searchPerformed]);
 
-
-  if (results.hits?.total?.value === 0) {
+  if (areResultsEmpty) {
     return <></>
   }
   console.log(`Rendering results: ${JSON.stringify(results)}`)
