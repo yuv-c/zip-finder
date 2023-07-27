@@ -40,6 +40,8 @@ td {
 }
 
 tr:hover {
-    background-color: #313552;
+    background-color: #000000;
+    color: #059105;
     transition: background-color 0.5s ease;
+    transition: 0.5s ease;
 }

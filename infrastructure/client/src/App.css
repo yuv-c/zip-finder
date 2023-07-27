@@ -2,19 +2,38 @@ html, body, #root {
     margin: 0;
     padding: 0;
     height: 100%;
+    background-image: url("/public/background.png");
+/*    fit the image to the screen, if a part is not covered make the background black */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: black;
 }
 
-.App {
-    background: white;
+.app-background {
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    color: red;
+    color: #c71515;
+
 }
 
-.App img{
+.app-background img{
     padding-top: 50px;
+}
+
+.app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 70%;
+    margin-top: 10%;
+    padding-bottom: 1%;
+    box-sizing: border-box;
+    background-color: rgba(187, 187, 187, 0.8);
+    border-radius: 10px;
 }
 
 /* courtesy of Chat GPT */
