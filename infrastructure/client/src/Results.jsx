@@ -1,18 +1,19 @@
 import './Results.css';
 import lodash from 'lodash';
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 
-export default function Results({ results, searchPerformed }) {
-  const areResultsEmpty = useMemo(() => !results.length || (results.hits?.total?.value === 0), [results]);
+export default function Results({ results, shouldDisplayToast, setShouldDisplayToast }) {
+  const noResults = !results || results.length === 0 || results.hits?.total?.value === 0
 
   useEffect(() => {
-    if (areResultsEmpty && searchPerformed) {
-      toast.info('No results found');
+    if (noResults && shouldDisplayToast) {
+      toast.info('No results found')
+      setShouldDisplayToast(false)
     }
-  }, [areResultsEmpty, searchPerformed]);
+  }, [noResults, shouldDisplayToast, setShouldDisplayToast])
 
-  if (areResultsEmpty) {
+  if (noResults) {
     return <></>
   }
   console.log(`Rendering results: ${JSON.stringify(results)}`)
@@ -28,7 +29,7 @@ export default function Results({ results, searchPerformed }) {
   function copyZIPCodeToClipboard(zipCode) {
     if (zipCode) {
       navigator.clipboard.writeText(zipCode)
-      // TODO: toast the success to the UI
+      toast.success(`Copied ${zipCode} to clipboard`)
     }
   }
 

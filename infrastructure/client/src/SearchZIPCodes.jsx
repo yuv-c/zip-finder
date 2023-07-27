@@ -7,26 +7,64 @@ import './SearchZIPCodes.css'
 
 const API_URL = 'https://45xdbeisu1.execute-api.eu-central-1.amazonaws.com/prod/zip-api'
 
+function extractAddressParts(address) {
+  const addressParts = address.split(',')
+  const numberRegex = /\d+/g
+  const houseNumber = addressParts[0]?.match(numberRegex)
+  const streetName = addressParts[0]?.replace(numberRegex, '')?.trim()
+  const cityName = addressParts[1]?.trim()
+
+  return { houseNumber, streetName, cityName }
+}
+
+function validateAddress(address) {
+  const addressParts = address.split(',')
+  if (addressParts.length !== 2) {
+    throw new Error('Invalid address format - Please separate city and street with a comma (,)')
+  }
+
+  const { houseNumber, streetName, cityName } = extractAddressParts(address)
+
+  if (!houseNumber) throw new Error('Invalid address format - No house number provided')
+  if (!streetName) throw new Error('Invalid address format - No street name provided')
+  if (!cityName) throw new Error('Invalid address format - No city provided')
+}
+
 export default function SearchZIPCodes({ setIsLoading }) {
   const [address, setAddress] = useState([])
   const [results, setResults] = useState([])
-  const [searchPerformed, setSearchPerformed] = useState(false);
-
+  const [shouldDisplayToast, setShouldDisplayToast] = useState(false);
 
   useEffect(() => {
-    setSearchPerformed(false);
+    setShouldDisplayToast(false);
   }, [address]);
 
-  async function onSearch(zipCode) {
+  async function onSearch(address) {
+    if (!address || !address.trim()) return
+
     setIsLoading(true)
     setResults([])
+
+    try {
+      validateAddress(address)
+    } catch (e) {
+      toast.error(e.message)
+      setIsLoading(false)
+      return
+    }
+
+    const { houseNumber, streetName, cityName } = extractAddressParts(address)
+    const toastHTML = <div>Searching...<br />Street: {streetName}<br />House Number: {houseNumber}<br />City: {cityName}
+    </div>
+    toast.info(toastHTML)
+
 
     const headers = {
       'Content-Type': 'application/json'
     }
 
     const body = {
-      zip_code: zipCode
+      zip_code: address
     }
 
     let response;
@@ -40,14 +78,14 @@ export default function SearchZIPCodes({ setIsLoading }) {
 
       if (!response.ok) {
         throw new Error(`Request failed with status code ${response.status} ${json.error ? `and message: ${json.error}` : ''}`);
-        // TODO: Toast the error to the UI
       }
 
       setResults(json)
-      setSearchPerformed(true);
+      setShouldDisplayToast(true);
     } catch (e) {
       console.error(e)
       toast.error(e.message)
+      setShouldDisplayToast(false);
     } finally {
       setIsLoading(false)
     }
@@ -56,7 +94,8 @@ export default function SearchZIPCodes({ setIsLoading }) {
   return (
     <div className="search-container">
       <AddressInputField input={address} setInput={setAddress} onClick={onSearch} />
-      <Results results={results} searchPerformed={searchPerformed} />
+      <Results results={results} shouldDisplayToast={shouldDisplayToast}
+               setShouldDisplayToast={setShouldDisplayToast} />
     </div>
   );
 }
