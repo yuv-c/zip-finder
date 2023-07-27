@@ -18,7 +18,7 @@ export default function AddressInputField({input, setInput, onClick}) {
         value={input}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
-        placeholder="הכנס את הכתובת בפורמט הבא - רחוב ומספר בית, עיר (עיר מופרדת ע״י פסיק): הורדים 5, ירושלים"
+        placeholder="רחוב ומספר בית, עיר. דוגמא: הורדים 5, ירושלים"
         dir={'rtl'}
       />
     </div>

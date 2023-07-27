@@ -6,7 +6,7 @@ export default function Toast (){
     <>
       <ToastContainer
         position={'bottom-center'}
-        autoClose={9000}
+        autoClose={5000}
         newestOnTop={false}
         closeOnClick
         rtl={false}
