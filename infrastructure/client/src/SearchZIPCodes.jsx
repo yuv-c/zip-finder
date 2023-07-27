@@ -33,16 +33,17 @@ function validateAddress(address) {
 export default function SearchZIPCodes({ setIsLoading }) {
   const [address, setAddress] = useState([])
   const [results, setResults] = useState([])
-  const [shouldDisplayToast, setShouldDisplayToast] = useState(false);
+  const [toastNoResults, setToastNoResults] = useState(false);
 
   useEffect(() => {
-    setShouldDisplayToast(false);
+    setToastNoResults(false);
   }, [address]);
 
   async function onSearch(address) {
     if (!address || !address.trim()) return
 
     setIsLoading(true)
+    setToastNoResults(false)
     setResults([])
 
     try {
@@ -81,11 +82,11 @@ export default function SearchZIPCodes({ setIsLoading }) {
       }
 
       setResults(json)
-      setShouldDisplayToast(true);
+      setToastNoResults(true);
     } catch (e) {
       console.error(e)
       toast.error(e.message)
-      setShouldDisplayToast(false);
+      setToastNoResults(false);
     } finally {
       setIsLoading(false)
     }
@@ -94,8 +95,8 @@ export default function SearchZIPCodes({ setIsLoading }) {
   return (
     <div className="search-container">
       <AddressInputField input={address} setInput={setAddress} onClick={onSearch} />
-      <Results results={results} shouldDisplayToast={shouldDisplayToast}
-               setShouldDisplayToast={setShouldDisplayToast} />
+      <Results results={results} shouldDisplayToast={toastNoResults}
+               setShouldDisplayToast={setToastNoResults} />
     </div>
   );
 }
