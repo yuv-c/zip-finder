@@ -4,8 +4,8 @@ provider "aws" {
 }
 
 resource "aws_instance" "es_kibana_instance" {
-  ami           = "ami-08e415170f52d1657"
-  instance_type = "r5d.large"
+  ami           = "ami-0dc7fe3dd38437495"
+  instance_type = "m4.large"
   key_name      = aws_key_pair.my_key.key_name
 
   vpc_security_group_ids = [aws_security_group.public_es_sg.id]
@@ -14,34 +14,8 @@ resource "aws_instance" "es_kibana_instance" {
   tags = {
     Name = "ESKibana"
   }
-  # editing and then running apply will create a new instance
-  user_data = <<-EOF
-              #!/bin/bash
-              echo "Setting up docker"
-              sudo yum update -y
-              sudo yum install -y docker
-              sudo service docker start
-              sudo usermod -a -G docker ec2-user
-              sudo systemctl enable docker
-              sudo chkconfig docker on
 
-              # Pull the images
-              echo "Pulling images"
-              sudo docker pull docker.elastic.co/kibana/kibana:7.10.2
-              sudo docker pull docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-
-              # Start the containers
-              echo "Starting containers"
-              sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" --restart always -v es_data:/usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-              sudo docker run -d --name kibana --link elasticsearch:elasticsearch -p 5601:5601 --restart always -v kibana_data:/usr/share/kibana/data docker.elastic.co/kibana/kibana:7.10.2
-
-              # Install plugin
-              echo "Installing plugin"
-              sudo docker exec elasticsearch ./bin/elasticsearch-plugin install --batch https://github.com/Immanuelbh/elasticsearch-analysis-hebrew/releases/download/elasticsearch-analysis-hebrew-7.10.2/elasticsearch-analysis-hebrew-7.10.2.zip
-
-              # Restart elasticsearch and kibana
-              sudo docker restart elasticsearch kibana
-              EOF
+  user_data = file("init_es_kibana.sh")
 }
 
 resource "aws_key_pair" "my_key" {
