@@ -1,6 +1,6 @@
 data "archive_file" "stop_ec2_lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/stop_ec2_alarm_handler.py"
+  source_file = "${path.module}/lambda_handlers/stop_ec2_alarm_handler.py"
   output_path = "${path.module}/stop_ec2_alarm_handler.zip"
 }
 

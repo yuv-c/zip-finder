@@ -15,7 +15,7 @@ resource "aws_instance" "es_kibana_instance" {
     Name = "ESKibana"
   }
 
-  user_data = file("./scripts/init_es_kibana.sh")
+  user_data = file("${path.module}/scripts/init_es_kibana.sh")
 }
 
 resource "aws_key_pair" "my_key" {
