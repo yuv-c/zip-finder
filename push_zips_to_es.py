@@ -122,7 +122,7 @@ async def create_index(es_client: ElasticSearchClient) -> None:
 
 async def main() -> None:
     es_client = ElasticSearchClient(es_endpoint=os.getenv("ES_ENDPOINT"), es_index=INDEX,
-                                    es_port=9200)  # use the ElasticSearchClient
+                                    es_port=9200)
 
     if input("Do you want to delete and recreate the index? (y/n)") == "y":
         logging.info("Deleting index")
