@@ -54,7 +54,7 @@ def cast_types(chunk: pd.DataFrame) -> pd.DataFrame:
     chunk["street_id"] = chunk["street_id"].astype(int).astype(str)
     chunk["city_id"] = chunk["city_id"].astype(int).astype(str)
     chunk["zip_code"] = chunk["zip_code"].astype(int).astype(str)
-    chunk["house_number"] = chunk["house_number"].astype(str)  # To enable free
+    chunk["house_number"] = chunk["house_number"].astype(int).astype(str)
     chunk["updated"] = pd.to_datetime(chunk["updated"], format="%Y%m%d")
     chunk["updated"] = chunk["updated"].dt.strftime("%Y-%m-%d %H:%M:%S")
     chunk["timestamp"] = pd.to_datetime("now")
