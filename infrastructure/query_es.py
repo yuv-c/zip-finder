@@ -18,11 +18,11 @@ HEADERS = {
 
 
 def process_input(input_string: str) -> Tuple[str, str, str]:
-    address, city = [x.strip() for x in input_string.split(",")]
+    street_and_house_num, city = [x.strip() for x in input_string.split(",")]
 
-    house_number = re.search(r'\d+', address).group()
+    house_number = re.search(r'\d+', street_and_house_num).group()
 
-    street_name = re.sub(house_number, '', address).strip()
+    street_name = re.sub(house_number, '', street_and_house_num).strip()
 
     return street_name, house_number, city
 
@@ -96,14 +96,12 @@ def lambda_handler(event, context):
 
         es_endpoint = os.getenv('ES_ENDPOINT')
         response = requests.get(f"http://{es_endpoint}:9200/address-to-zip/_search", json=query)
-        es_response = response.json()
 
-        processed_response = es_response
-        logger.info(f"Processed response: {processed_response}")
+        logger.info(f"Processed response: {response.json()}")
 
         return {
             'statusCode': 200,
-            'body': json.dumps(processed_response),
+            'body': json.dumps(response.json()),
             'headers': HEADERS,
         }
 
